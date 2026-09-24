@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Spam Email Automation</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f2f4f7;
+            margin: 0;
+            padding: 40px;
+        }
+
+        .container {
+            max-width: 750px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.12);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 180px;
+            padding: 15px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            font-size: 15px;
+            resize: vertical;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 15px;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            background: #222;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #444;
+        }
+
+        #result {
+            display: none;
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .spam {
+            background: #ffe5e5;
+            border: 1px solid #ffaaaa;
+        }
+
+        .safe {
+            background: #e5ffe9;
+            border: 1px solid #9be7a5;
+        }
+
+        .score {
+            font-size: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Spam Email Automation</h1>
+
+    <p class="subtitle">
+        Automatically detect whether an email is Spam or Not Spam
+    </p>
+
+    <textarea
+        id="emailText"
+        placeholder="Paste or type email content here..."
+    ></textarea>
+
+    <button onclick="checkEmail()">
+        Check Email
+    </button>
+
+    <div id="result"></div>
+
+</div>
+
+<script>
+
+async function checkEmail() {
+
+    const email = document.getElementById("emailText").value;
+    const result = document.getElementById("result");
+
+    if (!email.trim()) {
+        result.style.display = "block";
+        result.className = "spam";
+        result.innerHTML = "<b>Please enter an email message.</b>";
+        return;
+    }
+
+    try {
+
+        const response = await fetch("/check-email", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                email: email
+            })
+        });
+
+        const data = await response.json();
+
+        result.style.display = "block";
+
+        if (data.status === "SPAM") {
+
+            result.className = "spam";
+
+            result.innerHTML = `
+                <h2>⚠️ SPAM EMAIL</h2>
+
+                <p class="score">
+                    Spam Score: ${data.spam_score}/100
+                </p>
+
+                <p>
+                    <b>Matched Keywords:</b>
+                    ${data.matched_keywords.length
+                        ? data.matched_keywords.join(", ")
+                        : "None"}
+                </p>
+
+                <p>
+                    <b>Links Found:</b>
+                    ${data.links_found}
+                </p>
+
+                <p>
+                    <b>Action:</b>
+                    ${data.action}
+                </p>
+            `;
+
+        } else {
+
+            result.className = "safe";
+
+            result.innerHTML = `
+                <h2>✅ NOT SPAM</h2>
+
+                <p class="score">
+                    Spam Score: ${data.spam_score}/100
+                </p>
+
+                <p>
+                    <b>Matched Keywords:</b>
+                    ${data.matched_keywords.length
+                        ? data.matched_keywords.join(", ")
+                        : "None"}
+                </p>
+
+                <p>
+                    <b>Links Found:</b>
+                    ${data.links_found}
+                </p>
+
+                <p>
+                    <b>Action:</b>
+                    ${data.action}
+                </p>
+            `;
+        }
+
+    } catch (error) {
+
+        result.style.display = "block";
+        result.className = "spam";
+
+        result.innerHTML = `
+            <b>Error:</b> Unable to connect to the server.
+        `;
+    }
+}
+
+</script>
+
+</body>
+</html>
